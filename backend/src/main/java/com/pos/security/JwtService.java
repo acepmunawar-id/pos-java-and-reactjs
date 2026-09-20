@@ -2,8 +2,8 @@ package com.pos.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
@@ -60,17 +60,11 @@ public class JwtService {
     }
 
     private SecretKey signingKey() {
-        byte[] keyBytes;
-        try {
-            keyBytes = Decoders.BASE64.decode(secret);
-        } catch (IllegalArgumentException ex) {
-            keyBytes = secret.getBytes();
-        }
+        // The secret is used as plain UTF-8 text (no base64 guessing): HS256 needs >= 256 bits.
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
-            // Pad to satisfy HS256's minimum 256-bit key length requirement.
-            byte[] padded = new byte[32];
-            System.arraycopy(keyBytes, 0, padded, 0, keyBytes.length);
-            keyBytes = padded;
+            throw new IllegalStateException(
+                    "app.jwt.secret (JWT_SECRET) must be at least 32 bytes long for HS256, got " + keyBytes.length);
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }

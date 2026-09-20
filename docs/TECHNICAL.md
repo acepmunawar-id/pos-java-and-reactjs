@@ -203,9 +203,9 @@ docker compose up --build
 ```
 
 - Frontend: http://localhost:8081
-- Backend REST API: http://localhost:8080/api
-- Swagger UI: http://localhost:8081/swagger-ui/index.html (diproksi lewat Nginx) atau langsung http://localhost:8080/swagger-ui/index.html
-- PostgreSQL: `localhost:5432` (kredensial sesuai `.env`)
+- Backend REST API: http://localhost:8082/api
+- Swagger UI: http://localhost:8081/swagger-ui/index.html (diproksi lewat Nginx) atau langsung http://localhost:8082/swagger-ui/index.html
+- PostgreSQL: `localhost:5434` (kredensial sesuai `.env`)
 
 Saat backend pertama kali start, Flyway otomatis menjalankan migrasi (`V1__init.sql`, `V2__seed.sql`) yang membuat skema dan 3 akun contoh (lihat §6).
 

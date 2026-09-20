@@ -28,9 +28,9 @@ docker compose up --build
 | Layanan | URL |
 |---|---|
 | Frontend | http://localhost:8081 |
-| Backend REST API | http://localhost:8080/api |
-| Swagger UI | http://localhost:8080/swagger-ui/index.html |
-| PostgreSQL | `localhost:5432` |
+| Backend REST API | http://localhost:8082/api |
+| Swagger UI | http://localhost:8082/swagger-ui/index.html |
+| PostgreSQL | `localhost:5434` |
 
 ### Akun default (ganti setelah instalasi pertama)
 

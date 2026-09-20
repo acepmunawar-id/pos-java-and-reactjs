@@ -5,7 +5,7 @@ WORKDIR /app
 # Cache dependencies separately from source so a source-only change doesn't
 # force Maven to re-download the internet on every rebuild.
 COPY pom.xml .
-RUN mvn -q -B dependency:go-offline
+RUN mvn -q -B -Dmaven.wagon.http.retryHandler.count=6 -Dmaven.wagon.rto=120000 dependency:go-offline
 
 COPY src ./src
 RUN mvn -q -B clean package -DskipTests
