@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-/** Supplies the "who" for {@code @CreatedBy}/{@code @LastModifiedBy} on {@link com.pos.common.entity.BaseEntity}. */
+/** Supplies the "who" for {@code @CreatedBy}/{@code @LastModifiedBy} on {@link com.pos.model.BaseEntity}. */
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class JpaAuditingConfig {

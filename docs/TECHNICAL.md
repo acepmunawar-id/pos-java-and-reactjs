@@ -102,7 +102,7 @@ sequenceDiagram
 
 - Token JWT (HS256) berisi `subject` = username dan claim `role`.
 - Password disimpan ter-hash dengan **BCrypt** (`PasswordEncoder`).
-- Endpoint publik (tanpa token): `/api/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health`.
+- Endpoint publik (tanpa token): `/api/auth/**`, `/actuator/health`.
 - Selebihnya wajib token valid; request tanpa/dengan token invalid → **401**. Token valid tapi role tidak berhak (`@PreAuthorize`) → **403**.
 - Otorisasi method-level dengan `@PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")` dsb, sesuai matriks hak akses di BRD §5.1.
 
@@ -134,9 +134,7 @@ sequenceDiagram
 | Migrasi database | Flyway |
 | Mapping DTO ⇄ Entity | MapStruct |
 | Boilerplate | Lombok |
-| Dokumentasi API | springdoc-openapi (Swagger UI) |
 | Export CSV | OpenCSV |
-| Testing | JUnit 5, Mockito, Spring Security Test, H2 (in-memory test DB) |
 | Build tool backend | Maven |
 | Frontend framework | React 19 (Vite) |
 | Routing | React Router v6 |
@@ -155,21 +153,18 @@ pos-app-java/
 ├── backend/
 │   ├── src/main/java/com/pos/
 │   │   ├── PosApplication.java
-│   │   ├── common/        # BaseEntity, ApiResponse, PageResponse, exceptions
-│   │   ├── config/        # SecurityConfig, JpaAuditingConfig, OpenApiConfig
+│   │   ├── config/        # SecurityConfig, JpaAuditingConfig
 │   │   ├── security/      # Role, JwtService, JwtAuthenticationFilter, SecurityUtils
-│   │   ├── auth/          # Login (AuthController/Service + dto)
-│   │   ├── user/          # Manajemen user & role
-│   │   ├── product/       # Produk, Kategori, Satuan
-│   │   ├── partner/       # Pelanggan, Supplier
-│   │   ├── pricing/       # Pajak, Diskon
-│   │   ├── sales/         # Transaksi kasir (Sale, SaleItem)
-│   │   ├── receipt/       # Struk (ESC/POS + printable view)
-│   │   └── report/        # Ekspor CSV
+│   │   ├── controller/    # Semua REST controller (Auth, User, Product, Sale, Receipt, Report, ...)
+│   │   ├── service/       # Interface + implementasi logika bisnis (termasuk EscPosBuilder)
+│   │   ├── repository/    # Spring Data JPA repository
+│   │   ├── model/         # JPA entity + enum (BaseEntity, Product, Sale, SaleItem, ...)
+│   │   ├── dto/           # Request/response (ApiResponse, PageResponse, *Request, *Response)
+│   │   ├── mapper/        # MapStruct mapper entity <-> DTO
+│   │   └── exception/     # Custom exception + GlobalExceptionHandler
 │   ├── src/main/resources/
 │   │   ├── application.yml
 │   │   └── db/migration/  # V1__init.sql, V2__seed.sql (Flyway)
-│   ├── src/test/java/...  # JUnit/Mockito unit test + integration test
 │   ├── Dockerfile
 │   └── pom.xml
 ├── frontend/
@@ -204,7 +199,6 @@ docker compose up --build
 
 - Frontend: http://localhost:8081
 - Backend REST API: http://localhost:8082/api
-- Swagger UI: http://localhost:8081/swagger-ui/index.html (diproksi lewat Nginx) atau langsung http://localhost:8082/swagger-ui/index.html
 - PostgreSQL: `localhost:5434` (kredensial sesuai `.env`)
 
 Saat backend pertama kali start, Flyway otomatis menjalankan migrasi (`V1__init.sql`, `V2__seed.sql`) yang membuat skema dan 3 akun contoh (lihat §6).
@@ -227,15 +221,6 @@ npm install
 npm run dev
 # buka http://localhost:5173 - Vite dev server mem-proxy /api ke http://localhost:8080
 ```
-
-### 5.3 Menjalankan Test
-
-```bash
-cd backend
-mvn test
-```
-
-Cakupan test: unit test service (Auth, User, Product, Sale - termasuk perhitungan diskon/pajak/kembalian dan validasi stok), `@WebMvcTest` untuk endpoint login, `@DataJpaTest` untuk query stok menipis, dan integration test (`@SpringBootTest` + MockMvc) yang memverifikasi matriks hak akses per role end-to-end.
 
 ## 6. Akun Default (Seed Data)
 
@@ -263,16 +248,7 @@ Cakupan test: unit test service (Auth, User, Product, Sale - termasuk perhitunga
 
 Lihat ERD lengkap di [`BRD.md §8`](./BRD.md#8-entity-relationship-diagram-erd). Migrasi SQL sumber kebenaran ada di `backend/src/main/resources/db/migration/`.
 
-## 9. Dokumentasi API (Swagger/OpenAPI)
-
-Seluruh endpoint REST didokumentasikan otomatis oleh springdoc-openapi:
-
-- UI interaktif: `/swagger-ui/index.html`
-- Spesifikasi mentah (JSON): `/v3/api-docs`
-
-Endpoint dikelompokkan per modul (tag): Autentikasi, Manajemen User, Master Data - Produk/Kategori/Satuan/Pelanggan/Supplier/Pajak/Diskon, Transaksi, Struk/Bill, Laporan. Untuk mencoba endpoint yang butuh login, klik tombol **Authorize** di Swagger UI dan masukkan `Bearer <token>` hasil `POST /api/auth/login`.
-
-## 10. Deployment ke Server
+## 9. Deployment ke Server
 
 1. Salin seluruh repo ke server (atau clone dari VCS).
 2. Salin `.env.example` menjadi `.env`, isi `JWT_SECRET` dengan string acak yang kuat dan kredensial database produksi.
@@ -281,6 +257,6 @@ Endpoint dikelompokkan per modul (tag): Autentikasi, Manajemen User, Master Data
 5. Backup rutin volume `pos-postgres-data` (atau lakukan `pg_dump` terjadwal).
 6. Login sebagai `superadmin`, ganti password default, buat akun Admin/Kasir sesuai kebutuhan.
 
-## 11. Keterbatasan Lingkungan Pengembangan Saat Ini
+## 10. Keterbatasan Lingkungan Pengembangan Saat Ini
 
-Backend telah dikompilasi, diuji (`mvn test`, 27 test - seluruhnya lulus), dan dikemas (`mvn package`) dalam sesi pengembangan ini. Frontend telah di-build (`npm run build`) dan dicek lint (`npm run lint`) tanpa error. **Build image Docker & `docker-compose up` end-to-end belum sempat diverifikasi otomatis** karena Docker Desktop/WSL integration tidak aktif pada environment pengembangan ini - disarankan menjalankan `docker compose up --build` secara manual setelah clone untuk verifikasi akhir sebelum deploy produksi.
+Backend telah dikompilasi dan dikemas (`mvn package`) dalam sesi pengembangan ini. Frontend telah di-build (`npm run build`) dan dicek lint (`npm run lint`) tanpa error. **Build image Docker & `docker-compose up` end-to-end belum sempat diverifikasi otomatis** karena Docker Desktop/WSL integration tidak aktif pada environment pengembangan ini - disarankan menjalankan `docker compose up --build` secara manual setelah clone untuk verifikasi akhir sebelum deploy produksi.

@@ -40,7 +40,6 @@ Dibutuhkan sebuah **aplikasi Point of Sale (POS)** yang terintegrasi: mulai dari
 - Riwayat transaksi dan pembatalan transaksi (void) yang mengembalikan stok.
 - Cetak struk: byte ESC/POS untuk printer thermal (via Web Serial API di browser) dan tampilan HTML 80mm sebagai fallback cetak biasa.
 - Laporan (ekspor CSV): ringkasan penjualan, rincian item terjual, dan stok produk.
-- Dokumentasi Swagger/OpenAPI untuk seluruh REST API.
 - Containerization (Dockerfile backend & frontend, docker-compose untuk orkestrasi bersama PostgreSQL).
 
 ### 3.2 Tidak termasuk ruang lingkup (out-of-scope) untuk versi ini
@@ -96,7 +95,6 @@ Dibutuhkan sebuah **aplikasi Point of Sale (POS)** yang terintegrasi: mulai dari
 | FR-14 | Sistem menyediakan cetak struk fallback berbasis HTML/browser bila printer thermal tidak tersedia | Wajib |
 | FR-15 | Sistem menyediakan ekspor laporan penjualan (ringkasan & rincian item) dan laporan stok dalam format CSV | Wajib |
 | FR-16 | Sistem menampilkan dashboard ringkasan (jumlah transaksi hari ini, total penjualan, grafik 7 hari terakhir, peringatan stok menipis) untuk Admin/Super Admin | Diinginkan |
-| FR-17 | Seluruh API didokumentasikan melalui Swagger/OpenAPI | Wajib |
 
 ## 6. Kebutuhan Non-Fungsional
 
@@ -108,7 +106,6 @@ Dibutuhkan sebuah **aplikasi Point of Sale (POS)** yang terintegrasi: mulai dari
 | NFR-04 | **Auditability**: setiap record memiliki jejak audit (dibuat/diubah oleh siapa dan kapan) melalui field bawaan (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`). |
 | NFR-05 | **Portabilitas**: seluruh komponen (backend, frontend, database) dapat dijalankan via Docker/`docker-compose` tanpa instalasi manual dependency di host. |
 | NFR-06 | **Skalabilitas kode**: backend memakai arsitektur berlapis (controller-service-repository) dengan DTO terpisah dari entity agar mudah dikembangkan/diuji. |
-| NFR-07 | **Testability**: modul-modul inti (autentikasi, transaksi, role-based access) memiliki automated test (JUnit/Mockito) yang dijalankan sebelum rilis. |
 
 ## 7. Alur Proses (Flowchart)
 
