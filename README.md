@@ -7,7 +7,6 @@ Aplikasi Point of Sale (kasir) untuk toko dengan 1 outlet - backend Spring Boot 
 - Transaksi kasir dengan perhitungan otomatis (subtotal, diskon, pajak, kembalian) dan pengurangan stok atomik.
 - Cetak struk: ESC/POS ke printer thermal (via Web Serial API) dengan fallback cetak browser.
 - Ekspor laporan CSV (penjualan & stok).
-- REST API terdokumentasi via Swagger/OpenAPI, dilengkapi automated test (JUnit/Mockito).
 
 ## Dokumentasi
 
@@ -29,7 +28,6 @@ docker compose up --build
 |---|---|
 | Frontend | http://localhost:8081 |
 | Backend REST API | http://localhost:8082/api |
-| Swagger UI | http://localhost:8082/swagger-ui/index.html |
 | PostgreSQL | `localhost:5434` |
 
 ### Akun default (ganti setelah instalasi pertama)
@@ -53,18 +51,11 @@ npm install
 npm run dev   # http://localhost:5173
 ```
 
-## Menjalankan Test
-
-```bash
-cd backend
-mvn test
-```
-
 ## Struktur Proyek
 
 ```
 pos-app-java/
-├── backend/    # Spring Boot REST API (layered architecture, JWT, JUnit, Swagger)
+├── backend/    # Spring Boot REST API (layered architecture, JWT)
 ├── frontend/   # React + Vite + Tailwind CSS
 ├── docs/       # BRD, dokumentasi teknis, panduan pengguna
 └── docker-compose.yml
