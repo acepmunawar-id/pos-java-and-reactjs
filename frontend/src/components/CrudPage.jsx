@@ -7,7 +7,8 @@ import Modal from './Modal'
  * Generic master-data screen: search box, paginated table, and an add/edit
  * modal - reused by Products, Categories, Units, Customers, Suppliers,
  * Taxes, Discounts and Users so each page only supplies its columns and
- * form fields instead of re-building the CRUD scaffolding.
+ * form fields instead of re-building the CRUD scaffolding. `toPayload` lets a
+ * page reshape the form state (e.g. parse numbers) right before it is sent.
  */
 export default function CrudPage({
   title,
@@ -17,6 +18,7 @@ export default function CrudPage({
   emptyForm,
   renderForm,
   canWrite = true,
+  toPayload = (form) => form,
 }) {
   const crud = useCrud(resourceApi, queryKey)
   const [modalOpen, setModalOpen] = useState(false)
@@ -44,10 +46,11 @@ export default function CrudPage({
     e.preventDefault()
     setFormError('')
     try {
+      const payload = toPayload(form)
       if (editingId) {
-        await crud.update({ id: editingId, payload: form })
+        await crud.update({ id: editingId, payload })
       } else {
-        await crud.create(form)
+        await crud.create(payload)
       }
       setModalOpen(false)
     } catch (err) {

@@ -115,7 +115,10 @@ export default function DashboardPage() {
               <li key={p.id} className="flex justify-between py-2">
                 <span>{p.name}</span>
                 <span className="font-medium text-red-600">
-                  Sisa {p.stock} {p.unit?.symbol || ''}
+                  Sisa{' '}
+                  {p.measured
+                    ? `${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(p.materialStock)} ${p.category.baseUnit}`
+                    : `${p.stock} ${p.unit?.symbol || ''}`}
                 </span>
               </li>
             ))}

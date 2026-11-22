@@ -4,6 +4,7 @@ import { productsApi, customersApi, taxesApi, discountsApi } from '../../api/res
 import { createSale, getReceiptView } from '../../api/sales'
 import { errorMessage } from '../../api/client'
 import ReceiptModal from '../../components/ReceiptModal'
+import { formatAmount } from '../../utils/measured'
 
 function money(value) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(
@@ -13,7 +14,8 @@ function money(value) {
 
 export default function PosPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [cart, setCart] = useState([]) // [{productId, name, price, qty, stock, unit}]
+  // [{key, productId, sizeAmount, name, price, qty, stock}] - key membedakan ukuran pada produk per takaran
+  const [cart, setCart] = useState([])
   const [customerId, setCustomerId] = useState('')
   const [taxId, setTaxId] = useState('')
   const [discountId, setDiscountId] = useState('')
@@ -59,45 +61,41 @@ export default function PosPage() {
     return { subtotal, discountAmount, taxAmount, total, change }
   }, [cart, selectedTax, selectedDiscount, amountPaid])
 
-  function addToCart(product) {
+  /** Tambah ke keranjang. `size` diisi untuk produk per takaran (satu baris per ukuran). */
+  function addToCart(product, size) {
+    const key = size ? `${product.id}:${size.sizeAmount}` : product.id
+    const stock = size ? size.available : product.stock
     setCart((prev) => {
-      const existing = prev.find((item) => item.productId === product.id)
+      const existing = prev.find((item) => item.key === key)
       if (existing) {
-        if (existing.qty >= product.stock) return prev
-        return prev.map((item) =>
-          item.productId === product.id ? { ...item, qty: item.qty + 1 } : item,
-        )
+        if (existing.qty >= stock) return prev
+        return prev.map((item) => (item.key === key ? { ...item, qty: item.qty + 1 } : item))
       }
-      if (product.stock <= 0) return prev
+      if (stock <= 0) return prev
       return [
         ...prev,
         {
+          key,
           productId: product.id,
-          name: product.name,
-          price: Number(product.sellPrice),
+          sizeAmount: size ? size.sizeAmount : null,
+          name: size ? `${product.name} ${formatAmount(size.sizeAmount)} ${product.category.baseUnit}` : product.name,
+          price: Number(size ? size.sellPrice : product.sellPrice),
           qty: 1,
-          stock: product.stock,
-          unit: product.unit?.symbol || '',
+          stock,
         },
       ]
     })
     setSearchTerm('')
   }
 
-  function updateQty(productId, qty) {
+  function updateQty(key, qty) {
     setCart((prev) =>
-      prev
-        .map((item) =>
-          item.productId === productId
-            ? { ...item, qty: Math.max(1, Math.min(qty, item.stock)) }
-            : item,
-        )
-        .filter(Boolean),
+      prev.map((item) => (item.key === key ? { ...item, qty: Math.max(1, Math.min(qty, item.stock)) } : item)),
     )
   }
 
-  function removeItem(productId) {
-    setCart((prev) => prev.filter((item) => item.productId !== productId))
+  function removeItem(key) {
+    setCart((prev) => prev.filter((item) => item.key !== key))
   }
 
   function resetForm() {
@@ -127,7 +125,11 @@ export default function PosPage() {
         discountId: discountId || null,
         paymentMethod,
         amountPaid: Number(amountPaid),
-        items: cart.map((item) => ({ productId: item.productId, quantity: item.qty })),
+        items: cart.map((item) => ({
+          productId: item.productId,
+          quantity: item.qty,
+          sizeAmount: item.sizeAmount,
+        })),
       }
       const sale = await createSale(payload)
       const receipt = await getReceiptView(sale.id)
@@ -157,22 +159,49 @@ export default function PosPage() {
               {searchResults?.content?.length === 0 && (
                 <div className="py-3 text-center text-sm text-slate-400">Produk tidak ditemukan</div>
               )}
-              {searchResults?.content?.map((product) => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  disabled={product.stock <= 0}
-                  className="flex w-full items-center justify-between py-2.5 text-left text-sm hover:bg-slate-50 disabled:opacity-40"
-                >
-                  <div>
+              {searchResults?.content?.map((product) =>
+                product.measured ? (
+                  <div key={product.id} className="py-2.5 text-sm">
                     <div className="font-medium text-slate-800">{product.name}</div>
-                    <div className="text-xs text-slate-500">
-                      {product.sku} &middot; Stok {product.stock} {product.unit?.symbol}
+                    <div className="mb-2 text-xs text-slate-500">
+                      {product.sku} &middot; Stok bahan {formatAmount(product.materialStock)} {product.category.baseUnit}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {product.sizes.map((size) => (
+                        <button
+                          key={size.sizeAmount}
+                          onClick={() => addToCart(product, size)}
+                          disabled={size.available <= 0}
+                          className="rounded-lg border border-emerald-200 px-3 py-1.5 text-left hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <div className="font-medium text-slate-800">
+                            {formatAmount(size.sizeAmount)} {product.category.baseUnit}
+                          </div>
+                          <div className="text-xs">
+                            <span className="font-semibold text-emerald-600">{money(size.sellPrice)}</span>
+                            <span className="text-slate-500"> &middot; bisa {size.available}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="font-semibold text-emerald-600">{money(product.sellPrice)}</div>
-                </button>
-              ))}
+                ) : (
+                  <button
+                    key={product.id}
+                    onClick={() => addToCart(product)}
+                    disabled={product.stock <= 0}
+                    className="flex w-full items-center justify-between py-2.5 text-left text-sm hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    <div>
+                      <div className="font-medium text-slate-800">{product.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {product.sku} &middot; Stok {product.stock} {product.unit?.symbol}
+                      </div>
+                    </div>
+                    <div className="font-semibold text-emerald-600">{money(product.sellPrice)}</div>
+                  </button>
+                ),
+              )}
             </div>
           )}
         </div>
@@ -197,19 +226,19 @@ export default function PosPage() {
                 </tr>
               )}
               {cart.map((item) => (
-                <tr key={item.productId}>
+                <tr key={item.key}>
                   <td className="px-4 py-2 text-slate-700">{item.name}</td>
                   <td className="px-4 py-2 text-center">
                     <div className="inline-flex items-center gap-1">
                       <button
-                        onClick={() => updateQty(item.productId, item.qty - 1)}
+                        onClick={() => updateQty(item.key, item.qty - 1)}
                         className="h-6 w-6 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200"
                       >
                         −
                       </button>
                       <span className="w-8 text-center">{item.qty}</span>
                       <button
-                        onClick={() => updateQty(item.productId, item.qty + 1)}
+                        onClick={() => updateQty(item.key, item.qty + 1)}
                         disabled={item.qty >= item.stock}
                         className="h-6 w-6 rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40"
                       >
@@ -220,7 +249,7 @@ export default function PosPage() {
                   <td className="px-4 py-2 text-right">{money(item.price)}</td>
                   <td className="px-4 py-2 text-right font-medium">{money(item.price * item.qty)}</td>
                   <td className="px-4 py-2 text-right">
-                    <button onClick={() => removeItem(item.productId)} className="text-red-500 hover:underline">
+                    <button onClick={() => removeItem(item.key)} className="text-red-500 hover:underline">
                       Hapus
                     </button>
                   </td>
