@@ -3,7 +3,9 @@ package com.pos.service;
 import com.pos.exception.BadRequestException;
 import com.pos.exception.InsufficientStockException;
 import com.pos.exception.ResourceNotFoundException;
+import com.pos.model.Category;
 import com.pos.model.Customer;
+import com.pos.repository.CategoryRepository;
 import com.pos.repository.CustomerRepository;
 import com.pos.model.Discount;
 import com.pos.model.DiscountType;
@@ -48,6 +50,7 @@ public class SaleServiceImpl implements SaleService {
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final CustomerRepository customerRepository;
     private final TaxRepository taxRepository;
     private final DiscountRepository discountRepository;
@@ -75,24 +78,18 @@ public class SaleServiceImpl implements SaleService {
             Product product = productRepository
                     .findByIdForUpdate(itemRequest.getProductId())
                     .orElseThrow(() -> ResourceNotFoundException.of("Produk", itemRequest.getProductId()));
-
-            if (product.getStock() < itemRequest.getQuantity()) {
-                throw new InsufficientStockException(product.getName(), product.getStock(), itemRequest.getQuantity());
+            // Kunci kategori SEBELUM datanya dibaca, supaya stok bahan campuran (milik
+            // kategori, dipakai bersama banyak produk) selalu nilai terbaru.
+            if (product.getCategory() != null) {
+                lockCategory(product.getCategory().getId());
             }
 
-            BigDecimal itemSubtotal = product.getSellPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-            subtotal = subtotal.add(itemSubtotal);
-
-            product.setStock(product.getStock() - itemRequest.getQuantity());
+            SaleItem item = product.isMeasured()
+                    ? sellMeasured(product, itemRequest)
+                    : sellGeneral(product, itemRequest);
             productRepository.save(product);
-
-            sale.addItem(SaleItem.builder()
-                    .product(product)
-                    .productName(product.getName())
-                    .price(product.getSellPrice())
-                    .quantity(itemRequest.getQuantity())
-                    .subtotal(round(itemSubtotal))
-                    .build());
+            subtotal = subtotal.add(item.getSubtotal());
+            sale.addItem(item);
         }
         subtotal = round(subtotal);
 
@@ -165,11 +162,97 @@ public class SaleServiceImpl implements SaleService {
             Product product = productRepository
                     .findByIdForUpdate(item.getProduct().getId())
                     .orElseThrow(() -> ResourceNotFoundException.of("Produk", item.getProduct().getId()));
-            product.setStock(product.getStock() + item.getQuantity());
+            if (item.getSizeAmount() != null) {
+                // Produk per takaran: kembalikan bahan utama & campuran yang terpakai.
+                product.setMaterialStock(product.getMaterialStock().add(nz(item.getMaterialUsed())));
+                if (nz(item.getMixerUsed()).signum() > 0 && product.getCategory() != null) {
+                    Category category = lockCategory(product.getCategory().getId());
+                    category.setMixerStock(category.getMixerStock().add(item.getMixerUsed()));
+                }
+            } else {
+                product.setStock(product.getStock() + item.getQuantity());
+            }
             productRepository.save(product);
         });
         sale.setStatus(SaleStatus.VOID);
         return saleMapper.toResponse(saleRepository.save(sale));
+    }
+
+    /** Produk umum: stok dalam pcs, harga jual tetap. */
+    private SaleItem sellGeneral(Product product, SaleItemRequest request) {
+        int qty = request.getQuantity();
+        if (product.getStock() < qty) {
+            throw new InsufficientStockException(product.getName(), product.getStock(), qty);
+        }
+        product.setStock(product.getStock() - qty);
+        BigDecimal price = product.getSellPrice();
+        return SaleItem.builder()
+                .product(product)
+                .productName(product.getName())
+                .price(price)
+                .quantity(qty)
+                .subtotal(round(price.multiply(BigDecimal.valueOf(qty))))
+                .unitCost(product.getPurchasePrice())
+                .build();
+    }
+
+    /**
+     * Produk per takaran: harga sesuai ukuran kemasan, stok bahan utama (produk) &
+     * bahan campuran (kategori) dikurangi sesuai takaran x qty.
+     */
+    private SaleItem sellMeasured(Product product, SaleItemRequest request) {
+        BigDecimal size = request.getSizeAmount();
+        if (size == null) {
+            throw new BadRequestException("Pilih ukuran untuk produk '" + product.getName() + "'");
+        }
+        Category category = lockCategory(product.getCategory().getId());
+        String unit = category.getBaseUnit();
+        String sizeLabel = size.stripTrailingZeros().toPlainString() + " " + unit;
+        BigDecimal price = product.sellPriceFor(size)
+                .orElseThrow(() -> new BadRequestException("Produk '" + product.getName() + "' tidak dijual ukuran " + sizeLabel));
+
+        BigDecimal qty = BigDecimal.valueOf(request.getQuantity());
+        BigDecimal materialUsed = category.materialAmountFor(size).multiply(qty);
+        BigDecimal mixerUsed = category.mixerAmountFor(size).multiply(qty);
+
+        if (product.getMaterialStock().compareTo(materialUsed) < 0) {
+            throw new InsufficientStockException("Stok bahan '" + product.getName() + "' tidak mencukupi. Tersedia: "
+                    + fmt(product.getMaterialStock()) + " " + unit + ", dibutuhkan: " + fmt(materialUsed) + " " + unit);
+        }
+        if (mixerUsed.signum() > 0 && category.getMixerStock().compareTo(mixerUsed) < 0) {
+            String mixer = category.getMixerName() == null ? "campuran" : category.getMixerName();
+            throw new InsufficientStockException("Stok " + mixer + " tidak mencukupi. Tersedia: "
+                    + fmt(category.getMixerStock()) + " " + unit + ", dibutuhkan: " + fmt(mixerUsed) + " " + unit);
+        }
+
+        BigDecimal unitCost = product.unitCostFor(size);
+        product.setMaterialStock(product.getMaterialStock().subtract(materialUsed));
+        category.setMixerStock(category.getMixerStock().subtract(mixerUsed));
+
+        return SaleItem.builder()
+                .product(product)
+                .productName(product.getName() + " " + sizeLabel)
+                .price(price)
+                .quantity(request.getQuantity())
+                .subtotal(round(price.multiply(qty)))
+                .sizeAmount(size)
+                .materialUsed(materialUsed)
+                .mixerUsed(mixerUsed)
+                .unitCost(unitCost)
+                .build();
+    }
+
+    private Category lockCategory(UUID id) {
+        return categoryRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> ResourceNotFoundException.of("Kategori", id));
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private static String fmt(BigDecimal value) {
+        return value.setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
     private void enforceOwnershipForCashier(Sale sale) {

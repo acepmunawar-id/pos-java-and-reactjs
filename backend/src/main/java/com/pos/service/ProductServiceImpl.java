@@ -7,7 +7,11 @@ import com.pos.dto.ProductResponse;
 import com.pos.model.Category;
 import com.pos.model.Product;
 import com.pos.model.Unit;
+import com.pos.dto.ProductSizePriceDto;
+import com.pos.exception.BadRequestException;
 import com.pos.mapper.ProductMapper;
+import com.pos.model.ProductSizePrice;
+import java.math.BigDecimal;
 import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.UnitRepository;
@@ -65,18 +69,8 @@ public class ProductServiceImpl implements ProductService {
         if (productRepository.existsBySkuIgnoreCase(request.getSku())) {
             throw new DuplicateResourceException("SKU '" + request.getSku() + "' sudah digunakan");
         }
-        Product product = Product.builder()
-                .sku(request.getSku())
-                .barcode(request.getBarcode())
-                .name(request.getName())
-                .category(resolveCategory(request.getCategoryId()))
-                .unit(resolveUnit(request.getUnitId()))
-                .purchasePrice(request.getPurchasePrice())
-                .sellPrice(request.getSellPrice())
-                .stock(request.getStock())
-                .minStock(request.getMinStock())
-                .active(request.isActive())
-                .build();
+        Product product = new Product();
+        apply(request, product);
         return productMapper.toResponse(productRepository.save(product));
     }
 
@@ -86,22 +80,77 @@ public class ProductServiceImpl implements ProductService {
         if (productRepository.existsBySkuIgnoreCaseAndIdNot(request.getSku(), id)) {
             throw new DuplicateResourceException("SKU '" + request.getSku() + "' sudah digunakan");
         }
-        product.setSku(request.getSku());
-        product.setBarcode(request.getBarcode());
-        product.setName(request.getName());
-        product.setCategory(resolveCategory(request.getCategoryId()));
-        product.setUnit(resolveUnit(request.getUnitId()));
-        product.setPurchasePrice(request.getPurchasePrice());
-        product.setSellPrice(request.getSellPrice());
-        product.setStock(request.getStock());
-        product.setMinStock(request.getMinStock());
-        product.setActive(request.isActive());
+        apply(request, product);
         return productMapper.toResponse(productRepository.save(product));
     }
 
     @Override
     public void delete(UUID id) {
         productRepository.delete(getOrThrow(id));
+    }
+
+    /**
+     * Salin isi request ke entity.
+     * <ul>
+     *   <li>Kategori UMUM: harga beli, harga jual, stok & stok minimum dari request.</li>
+     *   <li>Kategori PER TAKARAN: harga bahan per satuan, stok bahan, dan harga jual
+     *       per ukuran kemasan. Harga beli/jual di produk diisi otomatis dari ukuran
+     *       terkecil (untuk tampilan ringkas & laporan), stok pcs tidak dipakai.</li>
+     * </ul>
+     */
+    private void apply(ProductRequest request, Product product) {
+        product.setSku(request.getSku());
+        product.setBarcode(request.getBarcode());
+        product.setName(request.getName());
+        product.setCategory(resolveCategory(request.getCategoryId()));
+        product.setUnit(resolveUnit(request.getUnitId()));
+        product.setActive(request.isActive());
+
+        if (!product.isMeasured()) {
+            product.setPurchasePrice(request.getPurchasePrice());
+            product.setSellPrice(request.getSellPrice());
+            product.setStock(request.getStock());
+            product.setMinStock(request.getMinStock());
+            product.setMaterialPricePerUnit(null);
+            product.setMaterialStock(BigDecimal.ZERO);
+            product.setMinMaterialStock(BigDecimal.ZERO);
+            product.getSizePrices().clear();
+            return;
+        }
+
+        Category category = product.getCategory();
+        if (request.getMaterialPricePerUnit() == null) {
+            throw new BadRequestException("Harga bahan per " + category.getBaseUnit() + " wajib diisi");
+        }
+        product.setMaterialPricePerUnit(request.getMaterialPricePerUnit());
+        product.setMaterialStock(orZero(request.getMaterialStock()));
+        product.setMinMaterialStock(orZero(request.getMinMaterialStock()));
+        product.setStock(0);
+        product.setMinStock(0);
+
+        product.getSizePrices().clear();
+        for (ProductSizePriceDto price : request.getSizePrices() == null ? List.<ProductSizePriceDto>of() : request.getSizePrices()) {
+            if (category.findSize(price.getSizeAmount()).isEmpty()) {
+                throw new BadRequestException("Ukuran " + price.getSizeAmount().stripTrailingZeros().toPlainString() + " "
+                        + category.getBaseUnit() + " tidak ada di kategori " + category.getName());
+            }
+            if (product.sellPriceFor(price.getSizeAmount()).isPresent()) {
+                throw new BadRequestException("Harga untuk ukuran " + price.getSizeAmount().stripTrailingZeros().toPlainString() + " dobel");
+            }
+            product.getSizePrices().add(new ProductSizePrice(price.getSizeAmount(), price.getSellPrice()));
+        }
+        if (product.getSizePrices().isEmpty()) {
+            throw new BadRequestException("Isi harga jual minimal untuk satu ukuran kemasan");
+        }
+
+        BigDecimal smallest = product.getSizePrices().stream()
+                .map(ProductSizePrice::getSizeAmount).min(BigDecimal::compareTo).orElseThrow();
+        product.setSellPrice(product.sellPriceFor(smallest).orElseThrow());
+        product.setPurchasePrice(product.unitCostFor(smallest));
+    }
+
+    private static BigDecimal orZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private Product getOrThrow(UUID id) {

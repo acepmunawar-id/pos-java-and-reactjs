@@ -22,7 +22,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     boolean existsBySkuIgnoreCaseAndIdNot(String sku, UUID id);
 
-    @Query("select p from Product p where p.active = true and p.stock <= p.minStock order by p.name")
+    @Query("""
+            select p from Product p left join p.category c
+            where p.active = true and (
+                (c.type = com.pos.model.CategoryType.MEASURED and p.materialStock <= p.minMaterialStock)
+                or ((c is null or c.type <> com.pos.model.CategoryType.MEASURED) and p.stock <= p.minStock))
+            order by p.name""")
     List<Product> findLowStockProducts();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

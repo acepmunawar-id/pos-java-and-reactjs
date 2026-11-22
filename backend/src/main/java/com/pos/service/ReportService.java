@@ -76,6 +76,15 @@ public class ReportService {
         return toCsvBytes(rows);
     }
 
+    /** "10 ml=10000; 35 ml=35000" - harga jual per ukuran untuk produk per takaran. */
+    private static String sizePriceList(Product product) {
+        String unit = product.getCategory().getBaseUnit();
+        return product.getSizePrices().stream()
+                .sorted(java.util.Comparator.comparing(com.pos.model.ProductSizePrice::getSizeAmount))
+                .map(p -> p.getSizeAmount().stripTrailingZeros().toPlainString() + " " + unit + "=" + p.getSellPrice().toPlainString())
+                .collect(java.util.stream.Collectors.joining("; "));
+    }
+
     /** Laporan stok produk saat ini (untuk audit inventori). */
     public byte[] generateProductStockCsv() {
         List<Product> products = productRepository.findAll();
@@ -85,15 +94,21 @@ public class ReportService {
             "SKU", "Nama Produk", "Kategori", "Satuan", "Harga Beli", "Harga Jual", "Stok", "Stok Minimum", "Status"
         });
         for (Product product : products) {
+            boolean measured = product.isMeasured();
+            String baseUnit = measured ? " " + product.getCategory().getBaseUnit() : "";
             rows.add(new String[] {
                 product.getSku(),
                 product.getName(),
                 product.getCategory() != null ? product.getCategory().getName() : "-",
-                product.getUnit() != null ? product.getUnit().getSymbol() : "-",
-                product.getPurchasePrice().toPlainString(),
-                product.getSellPrice().toPlainString(),
-                String.valueOf(product.getStock()),
-                String.valueOf(product.getMinStock()),
+                measured ? product.getCategory().getBaseUnit()
+                        : product.getUnit() != null ? product.getUnit().getSymbol() : "-",
+                measured ? product.getMaterialPricePerUnit().toPlainString() + " /" + baseUnit.trim()
+                        : product.getPurchasePrice().toPlainString(),
+                measured ? sizePriceList(product) : product.getSellPrice().toPlainString(),
+                measured ? product.getMaterialStock().stripTrailingZeros().toPlainString() + baseUnit
+                        : String.valueOf(product.getStock()),
+                measured ? product.getMinMaterialStock().stripTrailingZeros().toPlainString() + baseUnit
+                        : String.valueOf(product.getMinStock()),
                 product.isActive() ? "Aktif" : "Nonaktif"
             });
         }

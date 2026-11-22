@@ -19,4 +19,8 @@ public class SaleItemResponse {
     private BigDecimal price;
     private int quantity;
     private BigDecimal subtotal;
+    private BigDecimal sizeAmount;
+    private BigDecimal materialUsed;
+    private BigDecimal mixerUsed;
+    private BigDecimal unitCost;
 }

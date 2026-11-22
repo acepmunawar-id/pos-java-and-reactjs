@@ -53,3 +53,11 @@ logging:
   level:
     com.pos: INFO
     org.hibernate.SQL: WARN
+  # Log juga ditulis ke file (default: folder log/ di root proyek bila
+  # backend dijalankan dari folder backend/). Ganti lewat env LOG_FILE.
+  file:
+    name: ${LOG_FILE:../log/pos-app.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 14

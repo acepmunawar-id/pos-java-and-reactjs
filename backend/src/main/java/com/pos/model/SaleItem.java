@@ -50,4 +50,22 @@ public class SaleItem extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal subtotal;
+
+    // ---- Snapshot produk per takaran (null untuk produk umum) ----
+
+    /** Ukuran kemasan yang dijual (ml / gram). */
+    @Column(name = "size_amount", precision = 10, scale = 2)
+    private BigDecimal sizeAmount;
+
+    /** Total bahan utama terpakai untuk baris ini (sudah dikali qty). */
+    @Column(name = "material_used", precision = 19, scale = 3)
+    private BigDecimal materialUsed;
+
+    /** Total bahan campuran terpakai untuk baris ini (sudah dikali qty). */
+    @Column(name = "mixer_used", precision = 19, scale = 3)
+    private BigDecimal mixerUsed;
+
+    /** Modal per kemasan saat transaksi. */
+    @Column(name = "unit_cost", precision = 19, scale = 2)
+    private BigDecimal unitCost;
 }

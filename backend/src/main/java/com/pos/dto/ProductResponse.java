@@ -1,6 +1,7 @@
 package com.pos.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,4 +27,11 @@ public class ProductResponse {
     private int minStock;
     private boolean active;
     private boolean lowStock;
+
+    // ---- Produk per takaran ----
+    private boolean measured;
+    private BigDecimal materialPricePerUnit;
+    private BigDecimal materialStock;
+    private BigDecimal minMaterialStock;
+    private List<ProductSizeResponse> sizes;
 }

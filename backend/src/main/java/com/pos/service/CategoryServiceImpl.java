@@ -5,7 +5,15 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.dto.CategoryRequest;
 import com.pos.dto.CategoryResponse;
 import com.pos.model.Category;
+import com.pos.dto.CategorySizeDto;
+import com.pos.exception.BadRequestException;
 import com.pos.mapper.CategoryMapper;
+import com.pos.model.CategorySize;
+import com.pos.model.CategoryType;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import com.pos.repository.CategoryRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +48,9 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
             throw new DuplicateResourceException("Kategori '" + request.getName() + "' sudah ada");
         }
-        return categoryMapper.toResponse(categoryRepository.save(categoryMapper.toEntity(request)));
+        Category category = new Category();
+        apply(request, category);
+        return categoryMapper.toResponse(categoryRepository.save(category));
     }
 
     @Override
@@ -49,13 +59,74 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsByNameIgnoreCaseAndIdNot(request.getName(), id)) {
             throw new DuplicateResourceException("Kategori '" + request.getName() + "' sudah ada");
         }
-        categoryMapper.updateEntity(request, category);
+        apply(request, category);
         return categoryMapper.toResponse(categoryRepository.save(category));
     }
 
     @Override
     public void delete(UUID id) {
         categoryRepository.delete(getOrThrow(id));
+    }
+
+    /**
+     * Salin isi request ke entity. Untuk kategori PER TAKARAN, satuan dasar & minimal
+     * satu ukuran kemasan wajib; bahan campuran opsional (rasio campuran kosong/0 =
+     * tanpa campuran). Kategori UMUM tidak menyimpan pengaturan takaran.
+     */
+    private void apply(CategoryRequest request, Category category) {
+        category.setName(request.getName());
+        category.setDescription(request.getDescription());
+        CategoryType type = request.getType() == null ? CategoryType.GENERAL : request.getType();
+        category.setType(type);
+
+        if (type == CategoryType.GENERAL) {
+            category.setBaseUnit(null);
+            category.setMaterialRatio(null);
+            category.setMixerRatio(null);
+            category.setMixerName(null);
+            category.setMixerPricePerUnit(null);
+            category.setMixerStock(BigDecimal.ZERO);
+            category.getSizes().clear();
+            return;
+        }
+
+        if (request.getBaseUnit() == null || request.getBaseUnit().isBlank()) {
+            throw new BadRequestException("Satuan dasar (mis. ml / gram) wajib diisi untuk kategori per takaran");
+        }
+        List<CategorySizeDto> sizes = request.getSizes() == null ? List.of() : request.getSizes();
+        if (sizes.isEmpty()) {
+            throw new BadRequestException("Kategori per takaran minimal punya satu ukuran kemasan");
+        }
+        Set<BigDecimal> seen = new TreeSet<>();
+        for (CategorySizeDto size : sizes) {
+            if (!seen.add(size.getSizeAmount().stripTrailingZeros())) {
+                throw new BadRequestException("Ukuran kemasan " + size.getSizeAmount().stripTrailingZeros().toPlainString() + " dobel");
+            }
+        }
+
+        category.setBaseUnit(request.getBaseUnit().trim());
+        boolean withMixer = request.getMixerRatio() != null && request.getMixerRatio().signum() > 0;
+        if (withMixer) {
+            if (request.getMaterialRatio() == null || request.getMaterialRatio().signum() <= 0) {
+                throw new BadRequestException("Rasio bahan utama wajib lebih dari 0 bila memakai bahan campuran");
+            }
+            category.setMaterialRatio(request.getMaterialRatio());
+            category.setMixerRatio(request.getMixerRatio());
+            category.setMixerName(request.getMixerName());
+            category.setMixerPricePerUnit(request.getMixerPricePerUnit() == null ? BigDecimal.ZERO : request.getMixerPricePerUnit());
+            category.setMixerStock(request.getMixerStock() == null ? BigDecimal.ZERO : request.getMixerStock());
+        } else {
+            category.setMaterialRatio(null);
+            category.setMixerRatio(null);
+            category.setMixerName(null);
+            category.setMixerPricePerUnit(null);
+            category.setMixerStock(BigDecimal.ZERO);
+        }
+
+        category.getSizes().clear();
+        sizes.forEach(size -> category.getSizes().add(new CategorySize(
+                size.getSizeAmount(),
+                size.getPackagingPrice() == null ? BigDecimal.ZERO : size.getPackagingPrice())));
     }
 
     private Category getOrThrow(UUID id) {
