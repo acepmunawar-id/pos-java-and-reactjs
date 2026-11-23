@@ -10,7 +10,9 @@ export const NAV_ITEMS = [
   { to: '/master-data/suppliers', label: 'Supplier', icon: '🚚', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/pricing', label: 'Pajak & Diskon', icon: '💲', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/users', label: 'Manajemen User', icon: '👤', roles: ['SUPER_ADMIN'] },
-  { to: '/reports', label: 'Laporan', icon: '📈', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/settings',          label: 'Pengaturan',     icon: '⚙️',  roles: ['SUPER_ADMIN'] },
+  { to: '/expenses', label: 'Pengeluaran', icon: '💸', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/reports',  label: 'Laporan',     icon: '📈', roles: ['SUPER_ADMIN', 'ADMIN'] },
 ]
 
 export const ROLE_LABEL = {
