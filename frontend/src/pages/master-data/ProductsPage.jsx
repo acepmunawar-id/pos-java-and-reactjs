@@ -1,34 +1,52 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { categoriesApi } from '../../api/resources'
 import ProductsTab from './ProductsTab'
-import CategoriesPage from './CategoriesPage'
-import UnitsPage from './UnitsPage'
-
-const TABS = [
-  { key: 'products', label: 'Produk', render: () => <ProductsTab /> },
-  { key: 'categories', label: 'Kategori', render: () => <CategoriesPage /> },
-  { key: 'units', label: 'Satuan', render: () => <UnitsPage /> },
-]
 
 export default function ProductsPage() {
-  const [tab, setTab] = useState('products')
-  const active = TABS.find((t) => t.key === tab)
+  const [activeCatId, setActiveCatId] = useState(null)
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories', 'all-for-select'],
+    queryFn: () => categoriesApi.list({ size: 100 }),
+  })
+
+  const catList = categories?.content ?? []
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        {TABS.map((t) => (
+      {/* Tab kategori */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setActiveCatId(null)}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            activeCatId === null
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Semua
+        </button>
+        {catList.map(cat => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium ${
-              tab === t.key ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'
+            key={cat.id}
+            onClick={() => setActiveCatId(cat.id)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              activeCatId === cat.id
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
           >
-            {t.label}
+            {cat.name}
           </button>
         ))}
       </div>
-      {active.render()}
+
+      {/* Tabel produk — filter & default category mengikuti tab aktif */}
+      <ProductsTab
+        filterCategoryId={activeCatId}
+        defaultCategoryId={activeCatId}
+      />
     </div>
   )
 }

@@ -5,41 +5,80 @@ import { NAV_ITEMS, ROLE_LABEL } from './navConfig'
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen]     = useState(false)
+  const [collapsed, setCollapsed]   = useState(true)
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user.role))
 
   return (
     <div className="flex min-h-screen bg-slate-100">
-      {/* Sidebar - fixed on desktop, slide-over on mobile for a responsive layout */}
+
+      {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-slate-900 text-slate-100 transition-transform duration-200 md:static md:translate-x-0 ${
-          menuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        onClick={() => setCollapsed(v => !v)}
+        className={`
+          fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 text-slate-100
+          transition-all duration-200 overflow-hidden
+          md:static md:translate-x-0
+          w-64
+          ${collapsed ? 'md:w-16' : 'md:w-64'}
+          ${menuOpen  ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-4">
-          <span className="text-xl">🛒</span>
-          <span className="text-lg font-semibold">POS App</span>
+        {/* Logo — struktur identik dengan nav item agar icon sejajar */}
+        <div className={`flex h-16 shrink-0 items-center border-b border-slate-800 transition-all duration-200
+          ${collapsed ? 'md:justify-center md:px-0 md:gap-0 gap-3 px-3' : 'gap-3 px-3'}`}>
+          <span className="shrink-0 text-base leading-none">🛒</span>
+          <span className={`whitespace-nowrap text-base font-semibold overflow-hidden transition-all duration-200
+            ${collapsed ? 'md:w-0 md:opacity-0' : 'opacity-100'}`}>
+            POS App
+          </span>
         </div>
-        <nav className="flex flex-col gap-1 p-3">
+
+        {/* Nav items */}
+        <nav className="flex flex-col gap-0.5 overflow-y-auto p-2 flex-1">
           {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              onClick={() => setMenuOpen(false)}
+              title={collapsed ? item.label : ''}
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  isActive ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-slate-800'
-                }`
+                `flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition
+                 ${collapsed ? 'md:justify-center md:px-0 md:gap-0 px-3' : 'px-3'}
+                 ${isActive ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`
               }
             >
-              <span>{item.icon}</span>
-              {item.label}
+              <span className="shrink-0 text-base leading-none">{item.icon}</span>
+              <span className={`whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed ? 'md:w-0 md:opacity-0' : 'opacity-100'}`}>
+                {item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
+
+        {/* Tombol expand + hak cipta — hanya desktop */}
+        <div className="shrink-0 border-t border-slate-800 p-2 hidden md:block">
+          <button
+            onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v) }}
+            title={collapsed ? 'Perluas sidebar' : 'Ciutkan sidebar'}
+            className={`flex w-full items-center rounded-lg py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition
+              ${collapsed ? 'justify-center px-0 gap-0' : 'gap-3 px-3'}`}
+          >
+            <span className="shrink-0 text-base leading-none">{collapsed ? '›' : '‹'}</span>
+            <span className={`whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed ? 'w-0 opacity-0' : 'opacity-100'}`}>
+              Ciutkan
+            </span>
+          </button>
+          {!collapsed && (
+            <p className="mt-1 text-center text-[10px] text-slate-600">
+              &copy; {new Date().getFullYear()} POS App. All rights reserved.
+            </p>
+          )}
+        </div>
       </aside>
 
+      {/* Mobile overlay */}
       {menuOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/40 md:hidden"
@@ -47,11 +86,13 @@ export default function AppLayout() {
         />
       )}
 
-      <div className="flex min-h-screen flex-1 flex-col md:ml-0">
+      {/* ── Main area ───────────────────────────────────────── */}
+      <div className="flex min-h-screen flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
+          {/* Hamburger — mobile only */}
           <button
             className="rounded-md p-2 text-slate-600 hover:bg-slate-100 md:hidden"
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => setMenuOpen(v => !v)}
             aria-label="Buka menu"
           >
             ☰

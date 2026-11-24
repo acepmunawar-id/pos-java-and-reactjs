@@ -6,15 +6,15 @@ import { useState } from 'react'
  * resource. Every master data page (products, categories, customers, ...)
  * uses this instead of re-implementing the same react-query wiring.
  */
-export function useCrud(resourceApi, queryKey) {
+export function useCrud(resourceApi, queryKey, { extraParams = {} } = {}) {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(0)
   const size = 10
 
   const listQuery = useQuery({
-    queryKey: [queryKey, 'list', search, page],
-    queryFn: () => resourceApi.list({ search, page, size, sort: 'createdAt,desc' }),
+    queryKey: [queryKey, 'list', search, page, extraParams],
+    queryFn: () => resourceApi.list({ search, page, size, sort: 'createdAt,desc', ...extraParams }),
     placeholderData: (prev) => prev,
   })
 

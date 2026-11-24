@@ -5,12 +5,16 @@ export const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: '📊', roles: ['SUPER_ADMIN', 'ADMIN', 'USER'] },
   { to: '/pos', label: 'Kasir (POS)', icon: '🧾', roles: ['SUPER_ADMIN', 'ADMIN', 'USER'] },
   { to: '/sales-history', label: 'Riwayat Transaksi', icon: '🕒', roles: ['SUPER_ADMIN', 'ADMIN', 'USER'] },
-  { to: '/master-data/products', label: 'Produk & Kategori', icon: '📦', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/master-data/products',   label: 'Produk',   icon: '📦', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/master-data/categories', label: 'Kategori', icon: '🗂️', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/customers', label: 'Pelanggan', icon: '🧑‍🤝‍🧑', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/suppliers', label: 'Supplier', icon: '🚚', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/pricing', label: 'Pajak & Diskon', icon: '💲', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { to: '/master-data/users', label: 'Manajemen User', icon: '👤', roles: ['SUPER_ADMIN'] },
-  { to: '/reports', label: 'Laporan', icon: '📈', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/settings',          label: 'Pengaturan',     icon: '⚙️',  roles: ['SUPER_ADMIN'] },
+  { to: '/debts',    label: 'Hutang',      icon: '📋', roles: ['SUPER_ADMIN', 'ADMIN', 'USER'] },
+  { to: '/expenses', label: 'Pengeluaran', icon: '💸', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { to: '/reports',  label: 'Laporan',     icon: '📈', roles: ['SUPER_ADMIN', 'ADMIN'] },
 ]
 
 export const ROLE_LABEL = {
