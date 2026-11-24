@@ -24,26 +24,14 @@ export default function AppLayout() {
           ${menuOpen  ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
-        {/* Logo */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 px-3">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <span className="shrink-0 text-xl">🛒</span>
-            <span
-              className={`whitespace-nowrap text-base font-semibold transition-all duration-200 ${
-                collapsed ? 'md:w-0 md:opacity-0' : 'opacity-100'
-              }`}
-            >
-              POS App
-            </span>
-          </div>
-          {/* Tombol collapse — hanya desktop */}
-          <button
-            onClick={() => setCollapsed(v => !v)}
-            title={collapsed ? 'Perluas sidebar' : 'Ciutkan sidebar'}
-            className="hidden md:flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-700 hover:text-white transition"
-          >
-            {collapsed ? '›' : '‹'}
-          </button>
+        {/* Logo — struktur identik dengan nav item agar icon sejajar */}
+        <div className={`flex h-16 shrink-0 items-center border-b border-slate-800 transition-all duration-200
+          ${collapsed ? 'md:justify-center md:px-0 md:gap-0 gap-3 px-3' : 'gap-3 px-3'}`}>
+          <span className="shrink-0 text-base leading-none">🛒</span>
+          <span className={`whitespace-nowrap text-base font-semibold overflow-hidden transition-all duration-200
+            ${collapsed ? 'md:w-0 md:opacity-0' : 'opacity-100'}`}>
+            POS App
+          </span>
         </div>
 
         {/* Nav items */}
@@ -67,6 +55,26 @@ export default function AppLayout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Tombol expand + hak cipta — hanya desktop */}
+        <div className="shrink-0 border-t border-slate-800 p-2 hidden md:block">
+          <button
+            onClick={() => setCollapsed(v => !v)}
+            title={collapsed ? 'Perluas sidebar' : 'Ciutkan sidebar'}
+            className={`flex w-full items-center rounded-lg py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition
+              ${collapsed ? 'justify-center px-0 gap-0' : 'gap-3 px-3'}`}
+          >
+            <span className="shrink-0 text-base leading-none">{collapsed ? '›' : '‹'}</span>
+            <span className={`whitespace-nowrap overflow-hidden transition-all duration-200 ${collapsed ? 'w-0 opacity-0' : 'opacity-100'}`}>
+              Ciutkan
+            </span>
+          </button>
+          {!collapsed && (
+            <p className="mt-1 text-center text-[10px] text-slate-600">
+              &copy; {new Date().getFullYear()} POS App. All rights reserved.
+            </p>
+          )}
+        </div>
       </aside>
 
       {/* Mobile overlay */}
