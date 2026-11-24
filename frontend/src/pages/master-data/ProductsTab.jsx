@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import CrudPage from '../../components/CrudPage'
 import Field, { inputClass } from '../../components/Field'
 import { productsApi, categoriesApi, unitsApi } from '../../api/resources'
 import { computeSize, formatAmount, sizeKey, toNumber } from '../../utils/measured'
+import client from '../../api/client'
 
 const emptyForm = {
   sku: '',
   barcode: '',
   name: '',
+  imageUrl: '',
   categoryId: '',
   unitId: '',
   purchasePrice: 0,
@@ -28,6 +31,57 @@ function money(value) {
   )
 }
 
+function ImageUploadField({ value, onChange }) {
+  const [uploading, setUploading] = useState(false)
+  const [err, setErr] = useState('')
+
+  async function handleFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setErr(''); setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await client.post('/uploads/product-image', fd)
+      onChange(data.data)
+    } catch {
+      setErr('Gagal upload gambar')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mb-3">
+      <span className="mb-1 block text-sm text-slate-600">Foto Produk (opsional)</span>
+      <div className="flex items-center gap-3">
+        {/* Preview */}
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center">
+          {value
+            ? <img src={value} alt="preview" className="h-full w-full object-cover" onError={e => { e.target.style.display='none' }} />
+            : <span className="text-2xl">🛍️</span>
+          }
+        </div>
+        <div className="flex-1">
+          <label className="cursor-pointer">
+            <span className={`inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs text-slate-500 hover:border-blue-400 hover:text-blue-500 transition ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+              {uploading ? '⏳ Mengupload...' : '📷 Pilih Foto'}
+            </span>
+            <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+          </label>
+          {value && (
+            <button type="button" onClick={() => onChange('')}
+              className="ml-2 text-xs text-red-400 hover:text-red-600">
+              Hapus foto
+            </button>
+          )}
+          {err && <p className="mt-1 text-xs text-red-500">{err}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Harga jual per ukuran: dari input form bila sudah diubah, kalau belum dari data produk (row.sizes). */
 function priceFor(form, sizeAmount) {
   const key = sizeKey(sizeAmount)
@@ -36,7 +90,7 @@ function priceFor(form, sizeAmount) {
   return existing ? existing.sellPrice : ''
 }
 
-export default function ProductsTab() {
+export default function ProductsTab({ filterCategoryId, defaultCategoryId }) {
   const { data: categories } = useQuery({
     queryKey: ['categories', 'all-for-select'],
     queryFn: () => categoriesApi.list({ size: 100 }),
@@ -58,6 +112,7 @@ export default function ProductsTab() {
       sku: form.sku,
       barcode: form.barcode,
       name: form.name,
+      imageUrl: form.imageUrl || null,
       categoryId: form.categoryId || form.category?.id || null,
       unitId: form.unitId || form.unit?.id || null,
       active: form.active,
@@ -82,8 +137,17 @@ export default function ProductsTab() {
       resourceApi={productsApi}
       queryKey="products"
       emptyForm={emptyForm}
+      defaultForm={defaultCategoryId ? { categoryId: defaultCategoryId } : undefined}
+      extraParams={filterCategoryId ? { categoryId: filterCategoryId } : {}}
       toPayload={toPayload}
       columns={[
+        {
+          key: 'imageUrl',
+          label: 'Foto',
+          render: (r) => r.imageUrl
+            ? <img src={r.imageUrl} alt={r.name} className="h-10 w-10 rounded-lg object-cover border border-slate-100" onError={e => { e.target.style.display='none' }} />
+            : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-xl">🛍️</div>
+        },
         { key: 'sku', label: 'SKU' },
         { key: 'name', label: 'Nama' },
         { key: 'category', label: 'Kategori', render: (r) => r.category?.name || '-' },
@@ -157,6 +221,10 @@ export default function ProductsTab() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </Field>
+            <ImageUploadField
+              value={form.imageUrl || ''}
+              onChange={(url) => setForm(f => ({ ...f, imageUrl: url }))}
+            />
             <div className="grid grid-cols-2 gap-3">
               <Field label="Kategori">
                 <select

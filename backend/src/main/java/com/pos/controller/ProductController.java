@@ -27,8 +27,10 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> findAll(
-            @RequestParam(required = false) String search, Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(productService.findAll(search, pageable))));
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID categoryId,
+            Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(productService.findAll(search, categoryId, pageable))));
     }
 
     @GetMapping("/low-stock")

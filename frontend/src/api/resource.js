@@ -9,8 +9,8 @@ import client from './client'
  */
 export function createResourceApi(basePath) {
   return {
-    list: async ({ search, page = 0, size = 10, sort } = {}) => {
-      const { data } = await client.get(basePath, { params: { search, page, size, sort } })
+    list: async ({ search, categoryId, page = 0, size = 10, sort } = {}) => {
+      const { data } = await client.get(basePath, { params: { search, categoryId, page, size, sort } })
       return data.data // PageResponse { content, pageNumber, pageSize, totalElements, totalPages, last }
     },
     listActive: async () => {

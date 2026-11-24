@@ -8,7 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ProductService {
-    Page<ProductResponse> findAll(String search, Pageable pageable);
+    Page<ProductResponse> findAll(String search, UUID categoryId, Pageable pageable);
 
     List<ProductResponse> findLowStock();
 

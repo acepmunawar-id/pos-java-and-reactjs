@@ -24,6 +24,8 @@ public class ProductRequest {
     @NotBlank(message = "Nama produk wajib diisi")
     private String name;
 
+    private String imageUrl;
+
     private UUID categoryId;
 
     private UUID unitId;

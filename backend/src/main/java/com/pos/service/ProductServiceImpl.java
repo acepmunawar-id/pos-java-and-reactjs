@@ -35,12 +35,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponse> findAll(String search, Pageable pageable) {
-        String keyword = search == null ? "" : search;
-        return productRepository
-                .findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBarcodeContainingIgnoreCase(
-                        keyword, keyword, keyword, pageable)
-                .map(productMapper::toResponse);
+    public Page<ProductResponse> findAll(String search, UUID categoryId, Pageable pageable) {
+        boolean hasSearch   = search     != null && !search.isBlank();
+        boolean hasCategory = categoryId != null;
+        Page<Product> page;
+        if (hasSearch && hasCategory)  page = productRepository.findAllActiveBySearchAndCategory(search, categoryId, pageable);
+        else if (hasSearch)            page = productRepository.findAllActiveBySearch(search, pageable);
+        else if (hasCategory)          page = productRepository.findAllActiveByCategoryId(categoryId, pageable);
+        else                           page = productRepository.findAllActive(pageable);
+        return page.map(productMapper::toResponse);
     }
 
     @Override

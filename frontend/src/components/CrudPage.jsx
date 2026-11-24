@@ -16,11 +16,13 @@ export default function CrudPage({
   queryKey,
   columns,
   emptyForm,
+  defaultForm,
   renderForm,
   canWrite = true,
   toPayload = (form) => form,
+  extraParams = {},
 }) {
-  const crud = useCrud(resourceApi, queryKey)
+  const crud = useCrud(resourceApi, queryKey, { extraParams })
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -30,7 +32,7 @@ export default function CrudPage({
 
   function openCreate() {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, ...(defaultForm || {}) })
     setFormError('')
     setModalOpen(true)
   }

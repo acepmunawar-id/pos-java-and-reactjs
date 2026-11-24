@@ -9,6 +9,7 @@ import SalesHistoryPage from './pages/sales-history/SalesHistoryPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import ExpensesPage from './pages/expenses/ExpensesPage'
 import ProductsPage from './pages/master-data/ProductsPage'
+import MasterCategoryPage from './pages/master-data/MasterCategoryPage'
 import CustomersPage from './pages/master-data/CustomersPage'
 import SuppliersPage from './pages/master-data/SuppliersPage'
 import PricingPage from './pages/master-data/PricingPage'
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/master-data/products" element={<ProductsPage />} />
+            <Route path="/master-data/categories" element={<MasterCategoryPage />} />
             <Route path="/master-data/customers" element={<CustomersPage />} />
             <Route path="/master-data/suppliers" element={<SuppliersPage />} />
             <Route path="/master-data/pricing" element={<PricingPage />} />

@@ -19,6 +19,7 @@ public class ProductResponse {
     private String sku;
     private String barcode;
     private String name;
+    private String imageUrl;
     private CategoryResponse category;
     private UnitResponse unit;
     private BigDecimal purchasePrice;
