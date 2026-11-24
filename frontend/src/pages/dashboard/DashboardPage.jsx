@@ -261,22 +261,22 @@ export default function DashboardPage() {
           </p>
         </div>
         {/* ── Filter periode ── */}
-        <div className="flex flex-col gap-2 rounded-xl bg-slate-100 px-3 py-2.5">
+        <div className="w-full flex flex-col gap-2 rounded-xl bg-slate-100 px-3 py-2.5 sm:w-auto">
           {/* Baris 1: navigasi tahun + tombol bulan */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             <button
               type="button"
               onClick={prevYear}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-700"
             >‹</button>
-            <span className="min-w-[3.5rem] text-center text-xs font-semibold text-slate-600">{selYear}</span>
+            <span className="min-w-[3.5rem] shrink-0 text-center text-xs font-semibold text-slate-600">{selYear}</span>
             <button
               type="button"
               onClick={nextYear}
               disabled={selYear >= DEFAULT_YEAR}
-              className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-700 disabled:opacity-30"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 hover:text-slate-700 disabled:opacity-30"
             >›</button>
-            <span className="mx-1 h-4 w-px bg-slate-300" />
+            <span className="mx-1 h-4 w-px shrink-0 bg-slate-300" />
             {MONTH_NAMES.map((name, idx) => {
               const isFuture = selYear === DEFAULT_YEAR && idx > DEFAULT_MONTH
               const isActive = idx === selMonth && from === monthRange(selYear, idx).from
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={isFuture}
                   onClick={() => selectMonth(selYear, idx)}
-                  className={`rounded-md px-2 py-1 text-xs font-medium transition-all ${
+                  className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-orange-500 text-white shadow-sm'
                       : isFuture
@@ -307,7 +307,7 @@ export default function DashboardPage() {
               value={inputFrom}
               max={inputTo}
               onChange={e => setInputFrom(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 sm:flex-none"
             />
             <span className="text-xs text-slate-400">—</span>
             <input
@@ -316,7 +316,7 @@ export default function DashboardPage() {
               min={inputFrom}
               max={TODAY}
               onChange={e => setInputTo(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 sm:flex-none"
             />
             <button
               type="button"

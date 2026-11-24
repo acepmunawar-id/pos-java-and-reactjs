@@ -139,12 +139,12 @@ export default function ExpensesPage() {
       <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white px-4 py-3 shadow-sm text-sm">
         <span className="font-medium text-slate-500">📅 Filter</span>
         <input type="date" value={filterFrom} onChange={e => { setFilterFrom(e.target.value); setPage(0) }}
-          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400 sm:flex-none" />
         <span className="text-slate-400">—</span>
         <input type="date" value={filterTo} onChange={e => { setFilterTo(e.target.value); setPage(0) }}
-          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400 sm:flex-none" />
         <select value={filterCat} onChange={e => { setFilterCat(e.target.value); setPage(0) }}
-          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400">
+          className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400 sm:w-auto">
           <option value="">Semua Kategori</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>

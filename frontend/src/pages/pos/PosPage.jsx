@@ -143,7 +143,7 @@ export default function PosPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 pb-4 lg:grid-cols-3">
       {/* Product search & results */}
       <div className="lg:col-span-2">
         <div className="rounded-xl bg-white p-4 shadow-sm">
@@ -261,7 +261,7 @@ export default function PosPage() {
       </div>
 
       {/* Checkout panel */}
-      <div className="space-y-4">
+      <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
         <div className="rounded-xl bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-slate-700">Detail Transaksi</h2>
 

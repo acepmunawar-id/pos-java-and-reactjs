@@ -49,19 +49,19 @@ export default function SalesHistoryPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold text-slate-800">Riwayat Transaksi</h1>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <input
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-lg border border-slate-300 px-2 py-1.5"
+            className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs sm:flex-none sm:text-sm"
           />
           <span className="text-slate-400">s/d</span>
           <input
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-lg border border-slate-300 px-2 py-1.5"
+            className="flex-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs sm:flex-none sm:text-sm"
           />
         </div>
       </div>
