@@ -6,7 +6,7 @@ import { NAV_ITEMS, ROLE_LABEL } from './navConfig'
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const [menuOpen, setMenuOpen]     = useState(false)
-  const [collapsed, setCollapsed]   = useState(false)
+  const [collapsed, setCollapsed]   = useState(true)
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user.role))
 
