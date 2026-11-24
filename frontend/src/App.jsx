@@ -8,6 +8,7 @@ import PosPage from './pages/pos/PosPage'
 import SalesHistoryPage from './pages/sales-history/SalesHistoryPage'
 import ReportsPage from './pages/reports/ReportsPage'
 import ExpensesPage from './pages/expenses/ExpensesPage'
+import DebtsPage from './pages/debts/DebtsPage'
 import ProductsPage from './pages/master-data/ProductsPage'
 import MasterCategoryPage from './pages/master-data/MasterCategoryPage'
 import CustomersPage from './pages/master-data/CustomersPage'
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/pos" element={<PosPage />} />
           <Route path="/sales-history" element={<SalesHistoryPage />} />
+          <Route path="/debts" element={<DebtsPage />} />
 
           <Route element={<ProtectedRoute roles={MANAGER_ROLES} />}>
             <Route path="/reports" element={<ReportsPage />} />

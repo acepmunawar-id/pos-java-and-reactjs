@@ -16,6 +16,7 @@ public interface SaleMapper {
     @Mapping(target = "cashierName", source = "cashier.fullName")
     @Mapping(target = "taxName", expression = "java(sale.getTax() != null ? sale.getTax().getName() : null)")
     @Mapping(target = "discountName", expression = "java(sale.getDiscount() != null ? sale.getDiscount().getName() : null)")
+    @Mapping(target = "remainingDebt", ignore = true)
     SaleResponse toResponse(Sale sale);
 
     @Mapping(target = "productId", source = "product.id")

@@ -1,5 +1,6 @@
 package com.pos.repository;
 
+import com.pos.model.PaymentStatus;
 import com.pos.model.Sale;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,4 +33,9 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
 
     @Query(value = "select nextval('sale_invoice_seq')", nativeQuery = true)
     Long nextInvoiceSequence();
+
+    List<Sale> findByCustomerIdAndPaymentStatusOrderBySaleDateDesc(UUID customerId, PaymentStatus paymentStatus);
+
+    @Query("SELECT s FROM Sale s WHERE s.paymentStatus = :status ORDER BY s.saleDate DESC")
+    List<Sale> findByPaymentStatus(@Param("status") PaymentStatus status);
 }

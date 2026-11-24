@@ -19,6 +19,7 @@ import com.pos.dto.SaleRequest;
 import com.pos.dto.SaleResponse;
 import com.pos.model.Sale;
 import com.pos.model.SaleItem;
+import com.pos.model.PaymentStatus;
 import com.pos.model.SaleStatus;
 import com.pos.mapper.SaleMapper;
 import com.pos.repository.SaleRepository;
@@ -114,17 +115,28 @@ public class SaleServiceImpl implements SaleService {
         }
 
         BigDecimal total = taxableAmount.add(taxAmount);
-        if (request.getAmountPaid().compareTo(total) < 0) {
-            throw new BadRequestException("Jumlah bayar (" + request.getAmountPaid() + ") kurang dari total tagihan (" + total + ")");
+        boolean isDebt = request.getPaymentStatus() == PaymentStatus.UNPAID;
+
+        if (isDebt) {
+            if (sale.getCustomer() == null) {
+                throw new BadRequestException("Transaksi hutang wajib memilih pelanggan");
+            }
+        } else {
+            BigDecimal paid = request.getAmountPaid() != null ? request.getAmountPaid() : BigDecimal.ZERO;
+            if (paid.compareTo(total) < 0) {
+                throw new BadRequestException("Jumlah bayar (" + paid + ") kurang dari total tagihan (" + total + ")");
+            }
         }
 
         sale.setSubtotal(subtotal);
         sale.setDiscountAmount(round(discountAmount));
         sale.setTaxAmount(round(taxAmount));
         sale.setTotal(round(total));
-        sale.setPaymentMethod(request.getPaymentMethod());
-        sale.setAmountPaid(request.getAmountPaid());
-        sale.setChangeAmount(round(request.getAmountPaid().subtract(total)));
+        sale.setPaymentStatus(isDebt ? PaymentStatus.UNPAID : PaymentStatus.PAID);
+        sale.setPaymentMethod(isDebt ? null : request.getPaymentMethod());
+        BigDecimal paid = isDebt ? BigDecimal.ZERO : (request.getAmountPaid() != null ? request.getAmountPaid() : BigDecimal.ZERO);
+        sale.setAmountPaid(paid);
+        sale.setChangeAmount(isDebt ? BigDecimal.ZERO : round(paid.subtract(total)));
 
         return saleMapper.toResponse(saleRepository.save(sale));
     }

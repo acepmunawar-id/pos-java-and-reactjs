@@ -27,3 +27,14 @@ expensesApi.summary = async ({ from, to } = {}) => {
   const { data } = await client.get('/expenses/summary', { params: { from, to } })
   return data.data
 }
+
+export const debtsApi = {
+  list: async () => {
+    const { data } = await client.get('/debts')
+    return data.data
+  },
+  pay: async (payload) => {
+    const { data } = await client.post('/debts/pay', payload)
+    return data.data
+  },
+}

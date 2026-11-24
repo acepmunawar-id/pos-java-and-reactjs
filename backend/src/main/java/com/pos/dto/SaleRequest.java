@@ -1,10 +1,10 @@
 package com.pos.dto;
 
 import com.pos.model.PaymentMethod;
+import com.pos.model.PaymentStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -21,12 +21,15 @@ public class SaleRequest {
 
     private UUID discountId;
 
-    @NotNull(message = "Metode pembayaran wajib dipilih")
+    /** Null saat paymentStatus = UNPAID (hutang). */
     private PaymentMethod paymentMethod;
 
-    @NotNull(message = "Jumlah bayar wajib diisi")
+    /** Null atau 0 saat paymentStatus = UNPAID (hutang). */
     @DecimalMin(value = "0", message = "Jumlah bayar tidak boleh negatif")
     private BigDecimal amountPaid;
+
+    /** Default PAID; kirim UNPAID untuk transaksi hutang. */
+    private PaymentStatus paymentStatus = PaymentStatus.PAID;
 
     @NotEmpty(message = "Keranjang tidak boleh kosong")
     @Valid

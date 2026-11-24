@@ -57,7 +57,7 @@ public class ReceiptService {
                 .discountAmount(sale.getDiscountAmount())
                 .taxAmount(sale.getTaxAmount())
                 .total(sale.getTotal())
-                .paymentMethod(sale.getPaymentMethod().name())
+                .paymentMethod(sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "HUTANG")
                 .amountPaid(sale.getAmountPaid())
                 .changeAmount(sale.getChangeAmount())
                 .build();
@@ -99,7 +99,7 @@ public class ReceiptService {
         builder.bold(true)
                 .twoColumns("TOTAL", formatMoney(sale.getTotal()), LINE_WIDTH)
                 .bold(false)
-                .twoColumns("Bayar (" + sale.getPaymentMethod() + ")", formatMoney(sale.getAmountPaid()), LINE_WIDTH)
+                .twoColumns("Bayar (" + (sale.getPaymentMethod() != null ? sale.getPaymentMethod() : "Hutang") + ")", formatMoney(sale.getAmountPaid()), LINE_WIDTH)
                 .twoColumns("Kembali", formatMoney(sale.getChangeAmount()), LINE_WIDTH)
                 .divider(LINE_WIDTH)
                 .alignCenter()

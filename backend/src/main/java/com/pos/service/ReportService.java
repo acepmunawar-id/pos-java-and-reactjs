@@ -48,7 +48,7 @@ public class ReportService {
                 sale.getDiscountAmount().toPlainString(),
                 sale.getTaxAmount().toPlainString(),
                 sale.getTotal().toPlainString(),
-                sale.getPaymentMethod().name(),
+                sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "HUTANG",
                 sale.getStatus().name()
             });
         }

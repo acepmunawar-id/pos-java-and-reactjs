@@ -71,8 +71,13 @@ public class Sale extends BaseEntity {
     private BigDecimal total;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false, length = 20)
+    @Column(name = "payment_method", length = 20)
     private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.PAID;
 
     @Column(name = "amount_paid", nullable = false, precision = 19, scale = 2)
     private BigDecimal amountPaid;

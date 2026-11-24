@@ -1,6 +1,7 @@
 package com.pos.dto;
 
 import com.pos.model.PaymentMethod;
+import com.pos.model.PaymentStatus;
 import com.pos.model.SaleStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -32,8 +33,10 @@ public class SaleResponse {
     private BigDecimal discountAmount;
     private BigDecimal total;
     private PaymentMethod paymentMethod;
+    private PaymentStatus paymentStatus;
     private BigDecimal amountPaid;
     private BigDecimal changeAmount;
+    private BigDecimal remainingDebt;
     private SaleStatus status;
     private List<SaleItemResponse> items;
 }

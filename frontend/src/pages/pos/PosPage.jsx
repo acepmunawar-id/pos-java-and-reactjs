@@ -29,6 +29,7 @@ export default function PosPage() {
   const [customerId, setCustomerId]       = useState('')
   const [taxId, setTaxId]                 = useState('')
   const [discountId, setDiscountId]       = useState('')
+  const [paymentMode, setPaymentMode]     = useState('CASH') // 'CASH' | 'DEBT'
   const [paymentMethod, setPaymentMethod] = useState('CASH')
   const [amountPaid, setAmountPaid]       = useState('')
   const [submitting, setSubmitting]       = useState(false)
@@ -87,17 +88,21 @@ export default function PosPage() {
   }
   const updateQty  = (key, qty) => setCart(p => p.map(i => i.key === key ? { ...i, qty: Math.max(1, Math.min(qty, i.stock)) } : i))
   const removeItem = (key)      => setCart(p => p.filter(i => i.key !== key))
-  const resetForm  = ()         => { setCart([]); setCustomerId(''); setTaxId(''); setDiscountId(''); setPaymentMethod('CASH'); setAmountPaid(''); setShowPayment(false) }
+  const resetForm  = ()         => { setCart([]); setCustomerId(''); setTaxId(''); setDiscountId(''); setPaymentMode('CASH'); setPaymentMethod('CASH'); setAmountPaid(''); setShowPayment(false) }
 
   async function handleCheckout() {
     setError('')
     if (cart.length === 0) { setError('Keranjang masih kosong'); return }
-    if (Number(amountPaid || 0) < totals.total) { setError('Jumlah bayar kurang dari total tagihan'); return }
+    if (paymentMode === 'DEBT' && !customerId) { setError('Pilih pelanggan untuk transaksi hutang'); return }
+    if (paymentMode === 'CASH' && Number(amountPaid || 0) < totals.total) { setError('Jumlah bayar kurang dari total tagihan'); return }
     setSubmitting(true)
     try {
+      const isDebt = paymentMode === 'DEBT'
       const payload = {
         customerId: customerId || null, taxId: taxId || null, discountId: discountId || null,
-        paymentMethod, amountPaid: Number(amountPaid),
+        paymentStatus: isDebt ? 'UNPAID' : 'PAID',
+        paymentMethod: isDebt ? null : paymentMethod,
+        amountPaid: isDebt ? 0 : Number(amountPaid),
         items: cart.map(i => ({ productId: i.productId, quantity: i.qty, sizeAmount: i.sizeAmount })),
       }
       const sale    = await createSale(payload)
@@ -351,21 +356,46 @@ export default function PosPage() {
           {/* Metode bayar + jumlah */}
           {showPayment && (
             <div className="mb-3 space-y-2">
-              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none">
-                <option value="CASH">Tunai</option>
-                <option value="DEBIT">Kartu Debit</option>
-                <option value="CREDIT">Kartu Kredit</option>
-                <option value="QRIS">QRIS</option>
-                <option value="TRANSFER">Transfer</option>
-              </select>
-              <input type="number" min="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
-                placeholder="Jumlah bayar"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-blue-400 focus:outline-none" />
-              {Number(amountPaid || 0) >= totals.total && totals.total > 0 && (
-                <div className="flex justify-between rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
-                  <span>Kembalian</span><span>{money(Math.max(totals.change, 0))}</span>
+              {/* Toggle Tunai / Hutang */}
+              <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-semibold">
+                <button type="button"
+                  onClick={() => setPaymentMode('CASH')}
+                  className={`flex-1 py-2 transition ${paymentMode === 'CASH' ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                  💵 Tunai
+                </button>
+                <button type="button"
+                  onClick={() => setPaymentMode('DEBT')}
+                  className={`flex-1 py-2 transition ${paymentMode === 'DEBT' ? 'bg-orange-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
+                  📋 Hutang
+                </button>
+              </div>
+
+              {paymentMode === 'DEBT' ? (
+                <div className="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-700">
+                  {customerId
+                    ? <span>✓ Hutang atas nama <strong>{customers?.content?.find(c => c.id === customerId)?.name}</strong></span>
+                    : <span>⚠ Pilih pelanggan di atas untuk transaksi hutang</span>
+                  }
                 </div>
+              ) : (
+                <>
+                  <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none">
+                    <option value="CASH">Tunai</option>
+                    <option value="DEBIT">Kartu Debit</option>
+                    <option value="CREDIT">Kartu Kredit</option>
+                    <option value="QRIS">QRIS</option>
+                    <option value="TRANSFER">Transfer</option>
+                  </select>
+                  <input type="number" min="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)}
+                    placeholder="Jumlah bayar"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs focus:border-blue-400 focus:outline-none" />
+                  {Number(amountPaid || 0) >= totals.total && totals.total > 0 && (
+                    <div className="flex justify-between rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">
+                      <span>Kembalian</span><span>{money(Math.max(totals.change, 0))}</span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -386,8 +416,8 @@ export default function PosPage() {
                 Kembali
               </button>
               <button onClick={handleCheckout} disabled={submitting}
-                className="flex-1 rounded-xl bg-blue-600 py-3 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition active:scale-95">
-                {submitting ? 'Proses…' : 'Bayar & Struk'}
+                className={`flex-1 rounded-xl py-3 text-xs font-bold text-white disabled:opacity-60 transition active:scale-95 ${paymentMode === 'DEBT' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                {submitting ? 'Proses…' : paymentMode === 'DEBT' ? 'Simpan Hutang' : 'Bayar & Struk'}
               </button>
             </div>
           )}
