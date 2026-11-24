@@ -27,6 +27,9 @@ export default function CrudPage({
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null) // row yang akan dihapus
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const page = crud.data
 
@@ -60,12 +63,22 @@ export default function CrudPage({
     }
   }
 
-  async function handleDelete(row) {
-    if (!window.confirm(`Hapus "${row.name || row.username || row.invoiceNumber}"?`)) return
+  function handleDelete(row) {
+    setDeleteTarget(row)
+    setDeleteError('')
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    setDeleteError('')
     try {
-      await crud.remove(row.id)
+      await crud.remove(deleteTarget.id)
+      setDeleteTarget(null)
     } catch (err) {
-      window.alert(errorMessage(err, 'Gagal menghapus data'))
+      setDeleteError(errorMessage(err, 'Gagal menghapus data'))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -164,6 +177,57 @@ export default function CrudPage({
             >
               Berikutnya
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Popup konfirmasi hapus ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl sm:rounded-2xl overflow-hidden">
+            {/* Header merah */}
+            <div className="bg-gradient-to-br from-red-500 to-red-600 px-6 py-5 text-center">
+              <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+                <span className="text-3xl">🗑️</span>
+              </div>
+              <h3 className="text-lg font-bold text-white">Hapus Data?</h3>
+              <p className="mt-1 text-sm text-red-100">Tindakan ini tidak dapat dibatalkan</p>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5">
+              <p className="text-center text-sm text-slate-600">
+                Anda akan menghapus:
+              </p>
+              <p className="mt-1 text-center text-base font-semibold text-slate-800">
+                "{deleteTarget.name || deleteTarget.username || deleteTarget.invoiceNumber || 'data ini'}"
+              </p>
+
+              {deleteError && (
+                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-600">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={deleting}
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white hover:bg-red-600 transition disabled:opacity-60 active:scale-95"
+                >
+                  {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

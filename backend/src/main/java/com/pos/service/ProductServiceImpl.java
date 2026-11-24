@@ -105,6 +105,7 @@ public class ProductServiceImpl implements ProductService {
         product.setSku(request.getSku());
         product.setBarcode(request.getBarcode());
         product.setName(request.getName());
+        product.setImageUrl(request.getImageUrl());
         product.setCategory(resolveCategory(request.getCategoryId()));
         product.setUnit(resolveUnit(request.getUnitId()));
         product.setActive(request.isActive());
