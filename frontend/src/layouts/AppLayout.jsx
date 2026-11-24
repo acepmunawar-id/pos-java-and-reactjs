@@ -15,6 +15,7 @@ export default function AppLayout() {
 
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside
+        onClick={() => setCollapsed(v => !v)}
         className={`
           fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 text-slate-100
           transition-all duration-200 overflow-hidden
@@ -41,7 +42,7 @@ export default function AppLayout() {
               key={item.to}
               to={item.to}
               title={collapsed ? item.label : ''}
-              onClick={() => setMenuOpen(false)}
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition
                  ${collapsed ? 'md:justify-center md:px-0 md:gap-0 px-3' : 'px-3'}
@@ -59,7 +60,7 @@ export default function AppLayout() {
         {/* Tombol expand + hak cipta — hanya desktop */}
         <div className="shrink-0 border-t border-slate-800 p-2 hidden md:block">
           <button
-            onClick={() => setCollapsed(v => !v)}
+            onClick={(e) => { e.stopPropagation(); setCollapsed(v => !v) }}
             title={collapsed ? 'Perluas sidebar' : 'Ciutkan sidebar'}
             className={`flex w-full items-center rounded-lg py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition
               ${collapsed ? 'justify-center px-0 gap-0' : 'gap-3 px-3'}`}
