@@ -1,12 +1,16 @@
 package com.pos.service;
 
 import com.opencsv.CSVWriter;
+import com.pos.model.Expense;
 import com.pos.model.Product;
-import com.pos.repository.ProductRepository;
 import com.pos.model.Sale;
 import com.pos.model.SaleItem;
+import com.pos.model.SaleStatus;
+import com.pos.repository.ExpenseRepository;
+import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleRepository;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -14,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +33,7 @@ public class ReportService {
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
+    private final ExpenseRepository expenseRepository;
 
     /** Ringkasan transaksi (satu baris per invoice) dalam rentang tanggal. */
     public byte[] generateSalesSummaryCsv(LocalDate from, LocalDate to) {
@@ -112,6 +118,105 @@ public class ReportService {
                 product.isActive() ? "Aktif" : "Nonaktif"
             });
         }
+        return toCsvBytes(rows);
+    }
+
+    /**
+     * Laporan keuangan gabungan: ringkasan + detail penjualan + detail pengeluaran.
+     * Satu file CSV dengan tiga bagian dipisah baris kosong.
+     */
+    public byte[] generateFinancialReportCsv(LocalDate from, LocalDate to) {
+        LocalDate effectiveFrom = from == null ? LocalDate.now().withDayOfMonth(1) : from;
+        LocalDate effectiveTo   = to   == null ? LocalDate.now() : to;
+
+        List<Sale> sales = saleRepository.findBySaleDateBetweenOrderBySaleDateAsc(
+                startOf(effectiveFrom), endOf(effectiveTo));
+        List<Expense> expenses = expenseRepository
+                .findByFilter(effectiveFrom, effectiveTo, null, Pageable.unpaged())
+                .getContent();
+
+        BigDecimal totalPenjualan = sales.stream()
+                .filter(s -> s.getStatus() == SaleStatus.COMPLETED)
+                .map(Sale::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalPengeluaran = expenses.stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal laba = totalPenjualan.subtract(totalPengeluaran);
+
+        List<String[]> rows = new ArrayList<>();
+
+        // ── Ringkasan ──────────────────────────────────────────────────
+        rows.add(new String[]{"=== RINGKASAN ==="});
+        rows.add(new String[]{"Periode", effectiveFrom + " s/d " + effectiveTo});
+        rows.add(new String[]{"Total Penjualan (Rp)", totalPenjualan.toPlainString()});
+        rows.add(new String[]{"Total Pengeluaran (Rp)", totalPengeluaran.toPlainString()});
+        rows.add(new String[]{"Laba Kotor (Rp)", laba.toPlainString()});
+        rows.add(new String[]{""});
+
+        // ── Detail penjualan ───────────────────────────────────────────
+        rows.add(new String[]{"=== DETAIL PENJUALAN ==="});
+        rows.add(new String[]{"No Invoice", "Tanggal", "Kasir", "Pelanggan",
+                "Subtotal", "Diskon", "Pajak", "Total", "Metode Bayar", "Status"});
+        for (Sale sale : sales) {
+            rows.add(new String[]{
+                sale.getInvoiceNumber(),
+                DATE_FORMAT.format(sale.getSaleDate()),
+                sale.getCashier().getFullName(),
+                sale.getCustomer() != null ? sale.getCustomer().getName() : "-",
+                sale.getSubtotal().toPlainString(),
+                sale.getDiscountAmount().toPlainString(),
+                sale.getTaxAmount().toPlainString(),
+                sale.getTotal().toPlainString(),
+                sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "HUTANG",
+                sale.getStatus().name()
+            });
+        }
+        rows.add(new String[]{""});
+
+        // ── Detail pengeluaran ─────────────────────────────────────────
+        rows.add(new String[]{"=== DETAIL PENGELUARAN ==="});
+        rows.add(new String[]{"Tanggal", "Kategori", "Keterangan", "Supplier", "Jumlah (Rp)"});
+        for (Expense expense : expenses) {
+            rows.add(new String[]{
+                expense.getExpenseDate().toString(),
+                expense.getCategory().getName(),
+                expense.getDescription() != null ? expense.getDescription() : "-",
+                expense.getSupplier() != null ? expense.getSupplier().getName() : "-",
+                expense.getAmount().toPlainString()
+            });
+        }
+
+        return toCsvBytes(rows);
+    }
+
+    /** Laporan pengeluaran saja dalam rentang tanggal. */
+    public byte[] generateExpensesCsv(LocalDate from, LocalDate to) {
+        LocalDate effectiveFrom = from == null ? LocalDate.now().withDayOfMonth(1) : from;
+        LocalDate effectiveTo   = to   == null ? LocalDate.now() : to;
+
+        List<Expense> expenses = expenseRepository
+                .findByFilter(effectiveFrom, effectiveTo, null, Pageable.unpaged())
+                .getContent();
+
+        BigDecimal total = expenses.stream()
+                .map(Expense::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<String[]> rows = new ArrayList<>();
+        rows.add(new String[]{"Tanggal", "Kategori", "Keterangan", "Supplier", "Jumlah (Rp)"});
+        for (Expense expense : expenses) {
+            rows.add(new String[]{
+                expense.getExpenseDate().toString(),
+                expense.getCategory().getName(),
+                expense.getDescription() != null ? expense.getDescription() : "-",
+                expense.getSupplier() != null ? expense.getSupplier().getName() : "-",
+                expense.getAmount().toPlainString()
+            });
+        }
+        rows.add(new String[]{""});
+        rows.add(new String[]{"TOTAL", "", "", "", total.toPlainString()});
+
         return toCsvBytes(rows);
     }
 

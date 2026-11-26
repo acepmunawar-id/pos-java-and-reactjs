@@ -18,4 +18,8 @@ export const reportsApi = {
   salesDetailCsv: (from, to) =>
     downloadCsv('/reports/sales/detail.csv', { from, to }, 'laporan-item-terjual.csv'),
   productStockCsv: () => downloadCsv('/reports/products/stock.csv', {}, 'laporan-stok-produk.csv'),
+  financialCsv: (from, to) =>
+    downloadCsv('/reports/financial.csv', { from, to }, 'laporan-keuangan.csv'),
+  expensesCsv: (from, to) =>
+    downloadCsv('/reports/expenses.csv', { from, to }, 'laporan-pengeluaran.csv'),
 }

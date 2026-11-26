@@ -34,6 +34,7 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
     @Query(value = "select nextval('sale_invoice_seq')", nativeQuery = true)
     Long nextInvoiceSequence();
 
+
     List<Sale> findByCustomerIdAndPaymentStatusOrderBySaleDateDesc(UUID customerId, PaymentStatus paymentStatus);
 
     @Query("SELECT s FROM Sale s WHERE s.paymentStatus = :status ORDER BY s.saleDate DESC")

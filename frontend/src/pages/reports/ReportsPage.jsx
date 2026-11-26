@@ -71,9 +71,11 @@ export default function ReportsPage() {
 
   /* ── CSV reports ── */
   const csvReports = [
-    { key: 'summary', title: 'Ringkasan Penjualan',    desc: 'Satu baris per transaksi (invoice, kasir, total) dalam rentang tanggal.', action: () => reportsApi.salesSummaryCsv(from, to) },
-    { key: 'detail',  title: 'Rincian Item Terjual',   desc: 'Satu baris per produk yang terjual — untuk analisis produk terlaris.',   action: () => reportsApi.salesDetailCsv(from, to) },
-    { key: 'stock',   title: 'Stok Produk Saat Ini',   desc: 'Daftar seluruh produk beserta harga dan stok — untuk audit inventori.',  action: () => reportsApi.productStockCsv() },
+    { key: 'financial', title: '📊 Laporan Keuangan',      desc: 'Ringkasan + detail penjualan + pengeluaran dalam satu file — untuk rekap keuangan.',  action: () => reportsApi.financialCsv(from, to) },
+    { key: 'expenses',  title: '💸 Laporan Pengeluaran',   desc: 'Rincian seluruh pengeluaran belanja bahan dalam rentang tanggal.',                      action: () => reportsApi.expensesCsv(from, to) },
+    { key: 'summary',   title: 'Ringkasan Penjualan',      desc: 'Satu baris per transaksi (invoice, kasir, total) dalam rentang tanggal.',               action: () => reportsApi.salesSummaryCsv(from, to) },
+    { key: 'detail',    title: 'Rincian Item Terjual',     desc: 'Satu baris per produk yang terjual — untuk analisis produk terlaris.',                  action: () => reportsApi.salesDetailCsv(from, to) },
+    { key: 'stock',     title: 'Stok Produk Saat Ini',     desc: 'Daftar seluruh produk beserta harga dan stok — untuk audit inventori.',                 action: () => reportsApi.productStockCsv() },
   ]
 
   /* ═══════════════════════════ RENDER ═══════════════════════════ */

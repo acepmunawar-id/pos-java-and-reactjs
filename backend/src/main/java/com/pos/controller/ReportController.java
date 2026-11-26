@@ -41,6 +41,20 @@ public class ReportController {
         return csvResponse(reportService.generateProductStockCsv(), "laporan-stok-produk.csv");
     }
 
+    @GetMapping("/financial.csv")
+    public ResponseEntity<byte[]> financial(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return csvResponse(reportService.generateFinancialReportCsv(from, to), "laporan-keuangan.csv");
+    }
+
+    @GetMapping("/expenses.csv")
+    public ResponseEntity<byte[]> expenses(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return csvResponse(reportService.generateExpensesCsv(from, to), "laporan-pengeluaran.csv");
+    }
+
     private ResponseEntity<byte[]> csvResponse(byte[] body, String filename) {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
